@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Tool-Calling Assistant | Autonomous Reasoning & Tool Execution</title>
+  <meta name="description" content="State-of-the-art AI Tool-Calling Assistant with dynamic function execution: Calculator, Currency Converter, Document Reader, Live Weather, and Web Search.">
+
+  <!-- Google Fonts: Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Marked.js & DOMPurify for safe Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="dark">
+  <!-- Background Glow Orbs -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+  <div class="glow-orb orb-3"></div>
+
+  <div class="app-layout">
+    <!-- Top Navigation Header -->
+    <header class="top-navbar">
+      <div class="nav-left">
+        <button id="btn-toggle-sidebar" class="icon-btn mobile-only" aria-label="Toggle Sidebar">
+          <i data-lucide="menu"></i>
+        </button>
+        <div class="brand-logo">
+          <div class="logo-icon-wrap">
+            <i data-lucide="bot" class="logo-icon"></i>
+            <span class="status-pulse-dot" id="agent-status-dot" title="Agent Online"></span>
+          </div>
+          <div class="brand-text">
+            <span class="brand-title">AI Tool Agent</span>
+            <span class="brand-subtitle">Autonomous Function Caller</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs" id="nav-tabs">
+        <button class="nav-tab active" data-view="chat-view" id="tab-chat">
+          <i data-lucide="message-square"></i>
+          <span>Agent Chat</span>
+        </button>
+        <button class="nav-tab" data-view="doc-view" id="tab-doc">
+          <i data-lucide="file-text"></i>
+          <span>Doc Reader</span>
+          <span class="badge-pill new-pill">AI Highlights</span>
+        </button>
+        <button class="nav-tab" data-view="tools-view" id="tab-tools">
+          <i data-lucide="wrench"></i>
+          <span>Tool Playground</span>
+        </button>
+      </nav>
+
+      <!-- Nav Right Actions -->
+      <div class="nav-right">
+        <div class="provider-pill-badge" id="provider-badge" title="Click to change AI provider">
+          <span class="provider-dot"></span>
+          <span id="header-provider-name">MOCK</span>
+          <span class="model-tag" id="header-model-name">Heuristic Engine</span>
+        </div>
+
+        <button id="btn-open-settings" class="icon-btn glass-btn" aria-label="Settings" title="Settings & API Keys">
+          <i data-lucide="settings"></i>
+        </button>
+        <button id="btn-theme-toggle" class="icon-btn glass-btn" aria-label="Toggle Dark/Light Mode" title="Toggle Theme">
+          <i data-lucide="sun" id="theme-icon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Body Container -->
+    <div class="main-container">
+      <!-- Left Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <button id="btn-new-chat" class="btn btn-primary btn-block">
+            <i data-lucide="plus"></i>
+            <span>New Conversation</span>
+          </button>
+        </div>
+
+        <!-- Mini Quick Currency Widget -->
+        <div class="sidebar-card quick-currency-card">
+          <div class="card-header-compact">
+            <i data-lucide="arrow-left-right" class="accent-icon"></i>
+            <span>Quick Exchange</span>
+          </div>
+          <div class="quick-currency-form">
+            <div class="currency-input-row">
+              <input type="number" id="qc-amount" value="100" min="0" step="any" placeholder="Amount">
+              <select id="qc-from">
+                <option value="USD" selected>USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="INR">INR</option>
+                <option value="JPY">JPY</option>
+                <option value="CAD">CAD</option>
+                <option value="AUD">AUD</option>
+              </select>
+            </div>
+            <div class="currency-arrow-row">
+              <i data-lucide="arrow-down" class="subtle-arrow"></i>
+              <select id="qc-to">
+                <option value="EUR" selected>EUR</option>
+                <option value="USD">USD</option>
+                <option value="INR">INR</option>
+                <option value="GBP">GBP</option>
+                <option value="JPY">JPY</option>
+                <option value="CAD">CAD</option>
+                <option value="AUD">AUD</option>
+              </select>
+            </div>
+            <button id="btn-quick-convert" class="btn btn-secondary btn-sm btn-block">
+              <i data-lucide="repeat"></i> Convert
+            </button>
+            <div class="quick-convert-result" id="qc-result">100.00 USD ≈ 92.00 EUR</div>
+          </div>
+        </div>
+
+        <!-- Registered Tools Radar -->
+        <div class="sidebar-card">
+          <div class="card-header-compact">
+            <i data-lucide="cpu" class="accent-icon"></i>
+            <span>Active Agent Tools (5)</span>
+          </div>
+          <ul class="tool-status-list">
+            <li class="tool-status-item">
+              <span class="tool-badge-icon calc-bg"><i data-lucide="calculator"></i></span>
+              <div class="tool-status-info">
+                <span class="tool-status-name">Calculator</span>
+                <span class="tool-status-desc">AST Math & Formulas</span>
+              </div>
+              <span class="tool-ready-dot" title="Ready"></span>
+            </li>
+            <li class="tool-status-item">
+              <span class="tool-badge-icon curr-bg"><i data-lucide="coins"></i></span>
+              <div class="tool-status-info">
+                <span class="tool-status-name">Currency</span>
+                <span class="tool-status-desc">Live Rates & FX</span>
+              </div>
+              <span class="tool-ready-dot" title="Ready"></span>
+            </li>
+            <li class="tool-status-item">
+              <span class="tool-badge-icon doc-bg"><i data-lucide="file-search"></i></span>
+              <div class="tool-status-info">
+                <span class="tool-status-name">Doc Reader</span>
+                <span class="tool-status-desc">PDF, MD & Highlights</span>
+              </div>
+              <span class="tool-ready-dot" title="Ready"></span>
+            </li>
+            <li class="tool-status-item">
+              <span class="tool-badge-icon weather-bg"><i data-lucide="cloud-sun"></i></span>
+              <div class="tool-status-info">
+                <span class="tool-status-name">Weather</span>
+                <span class="tool-status-desc">Live Meteo Forecasts</span>
+              </div>
+              <span class="tool-ready-dot" title="Ready"></span>
+            </li>
+            <li class="tool-status-item">
+              <span class="tool-badge-icon search-bg"><i data-lucide="globe"></i></span>
+              <div class="tool-status-info">
+                <span class="tool-status-name">Web Search</span>
+                <span class="tool-status-desc">DuckDuckGo & Wiki</span>
+              </div>
+              <span class="tool-ready-dot" title="Ready"></span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sidebar Footer Actions -->
+        <div class="sidebar-footer">
+          <button id="btn-export-chat" class="sidebar-btn" title="Export Conversation">
+            <i data-lucide="download"></i>
+            <span>Export Chat</span>
+          </button>
+          <button id="btn-clear-chat" class="sidebar-btn text-danger" title="Clear Conversation Memory">
+            <i data-lucide="trash-2"></i>
+            <span>Clear History</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Central Content Workspace -->
+      <main class="content-workspace">
+        
+        <!-- ================= VIEW 1: AGENT CHAT VIEW ================= -->
+        <section id="chat-view" class="view-panel active-view">
+          <div class="chat-thread-container" id="chat-thread">
+            <!-- Welcome Hero (Shown when chat is empty) -->
+            <div class="welcome-hero" id="welcome-hero">
+              <div class="hero-icon-glow">
+                <i data-lucide="sparkles" class="hero-icon"></i>
+              </div>
+              <h1 class="hero-title">How can I assist you today?</h1>
+              <p class="hero-subtitle">
+                I am an autonomous AI reasoning agent. I inspect your request and automatically invoke external tools for math, currency exchange, document intelligence, live weather, and web search.
+              </p>
+
+              <!-- Quick Prompt Grid -->
+              <div class="prompt-chips-grid">
+                <div class="prompt-chip" data-prompt="What is (150 * 4) + sqrt(256) ^ 3?">
+                  <div class="chip-header">
+                    <i data-lucide="calculator" class="chip-icon calc-color"></i>
+                    <span>Math Evaluation</span>
+                  </div>
+                  <p class="chip-text">"What is (150 * 4) + sqrt(256) ^ 3?"</p>
+                </div>
+
+                <div class="prompt-chip" data-prompt="Convert 2500 USD to EUR and INR with live exchange rates.">
+                  <div class="chip-header">
+                    <i data-lucide="coins" class="chip-icon curr-color"></i>
+                    <span>Currency Exchange</span>
+                  </div>
+                  <p class="chip-text">"Convert 2500 USD to EUR and INR with live exchange rates"</p>
+                </div>
+
+                <div class="prompt-chip" data-prompt="What is the current weather in Tokyo and Paris, and convert 24 Celsius to Fahrenheit with (24 * 9/5) + 32?">
+                  <div class="chip-header">
+                    <i data-lucide="cloud-sun" class="chip-icon weather-color"></i>
+                    <span>Multi-Tool: Weather & Math</span>
+                  </div>
+                  <p class="chip-text">"Weather in Tokyo & Paris, and convert 24C to Fahrenheit"</p>
+                </div>
+
+                <div class="prompt-chip" data-prompt="Search for latest developments in the Artemis space mission.">
+                  <div class="chip-header">
+                    <i data-lucide="search" class="chip-icon search-color"></i>
+                    <span>Web Research</span>
+                  </div>
+                  <p class="chip-text">"Search for latest developments in Artemis space mission"</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="messages-list" id="messages-list"></div>
+          </div>
+
+          <!-- Bottom Chat Input Bar -->
+          <div class="chat-input-wrapper">
+            <!-- Real-time Thinking & Tool Execution Progress Overlay -->
+            <div class="live-progress-bar" id="live-progress-bar" style="display: none;">
+              <div class="progress-spinner"></div>
+              <span id="live-progress-text">Agent is reasoning...</span>
+            </div>
+
+            <form id="chat-form" class="chat-input-form">
+              <label for="file-upload-input" class="attach-btn" title="Upload Document (PDF, TXT, MD, CSV, JSON)">
+                <i data-lucide="paperclip"></i>
+                <input type="file" id="file-upload-input" accept=".pdf,.txt,.md,.markdown,.csv,.json" style="display: none;">
+              </label>
+
+              <textarea 
+                id="chat-input" 
+                rows="1" 
+                placeholder="Ask anything, calculate formulas, check currency, or analyze documents..." 
+                required
+              ></textarea>
+
+              <button type="submit" id="btn-send-message" class="send-btn" aria-label="Send Message">
+                <i data-lucide="send" id="send-icon"></i>
+              </button>
+            </form>
+            <div class="input-hint">
+              <span>Press <kbd>Enter</kbd> to send, <kbd>Shift + Enter</kbd> for new line</span>
+              <span class="provider-indicator" id="input-provider-indicator">Running on: MOCK Engine</span>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================= VIEW 2: AI DOCUMENT READER DECK ================= -->
+        <section id="doc-view" class="view-panel">
+          <div class="doc-deck-container">
+            <div class="deck-header">
+              <div>
+                <h2 class="section-title">📄 AI Document Reader & Analyzer</h2>
+                <p class="section-desc">Upload documents (PDF, Markdown, TXT, CSV, JSON) to generate instant Executive Summaries, extract key highlighted points, and query specific insights.</p>
+              </div>
+            </div>
+
+            <!-- Upload Dropzone -->
+            <div class="dropzone-card" id="doc-dropzone">
+              <i data-lucide="upload-cloud" class="dropzone-icon"></i>
+              <h3>Drag & Drop your Document here</h3>
+              <p>Supports PDF, TXT, Markdown, CSV, and JSON files</p>
+              <button class="btn btn-primary btn-sm" id="btn-browse-doc">
+                <i data-lucide="folder-open"></i> Browse Files
+              </button>
+              <input type="file" id="doc-deck-file-input" accept=".pdf,.txt,.md,.markdown,.csv,.json" style="display: none;">
+            </div>
+
+            <!-- Document Analysis Results Card (Hidden by default) -->
+            <div class="doc-analysis-results" id="doc-analysis-results" style="display: none;">
+              <!-- Metadata Ribbon -->
+              <div class="doc-meta-ribbon">
+                <div class="meta-item">
+                  <span class="meta-label">File:</span>
+                  <span class="meta-value" id="res-filename">document.pdf</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-label">Type:</span>
+                  <span class="meta-value badge-pill" id="res-doctype">PDF</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-label">Word Count:</span>
+                  <span class="meta-value" id="res-wordcount">1,250 words</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-label">Est. Read Time:</span>
+                  <span class="meta-value" id="res-readtime">~6 mins</span>
+                </div>
+              </div>
+
+              <!-- Two Column Layout: Summary & Highlights -->
+              <div class="doc-analysis-grid">
+                <!-- Executive Summary Box -->
+                <div class="analysis-card">
+                  <div class="analysis-card-header">
+                    <i data-lucide="book-open" class="accent-icon"></i>
+                    <h3>Brief Executive Description</h3>
+                  </div>
+                  <div class="analysis-card-body" id="res-summary-content">
+                    Document summary preview...
+                  </div>
+                </div>
+
+                <!-- Key Highlights Box -->
+                <div class="analysis-card">
+                  <div class="analysis-card-header">
+                    <i data-lucide="highlighter" class="accent-icon" style="color: var(--amber-glow);"></i>
+                    <h3>✨ Key Highlights & Crucial Quotes</h3>
+                  </div>
+                  <div class="analysis-card-body" id="res-highlights-content">
+                    <!-- Dynamic highlight items -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Ask Document Query Bar -->
+              <div class="doc-query-bar">
+                <div class="query-input-wrap">
+                  <i data-lucide="help-circle" class="query-icon"></i>
+                  <input type="text" id="doc-query-input" placeholder="Ask a question about this document (e.g. 'What are the main financial findings?')...">
+                  <button id="btn-doc-query" class="btn btn-secondary">
+                    <i data-lucide="sparkles"></i> Ask Agent
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================= VIEW 3: TOOL PLAYGROUND & REGISTRY ================= -->
+        <section id="tools-view" class="view-panel">
+          <div class="playground-container">
+            <div class="deck-header">
+              <div>
+                <h2 class="section-title">🔧 Dynamic Tool Registry & Playground</h2>
+                <p class="section-desc">Inspect function calling schemas, parameters, and execute individual tools directly with custom test inputs.</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-refresh-tools">
+                <i data-lucide="refresh-cw"></i> Refresh Tools
+              </button>
+            </div>
+
+            <!-- Two-Column Playground Layout -->
+            <div class="playground-grid">
+              <!-- Left: Tool Selector & Schema Inspector -->
+              <div class="playground-card">
+                <h3>Registered Tools</h3>
+                <div class="tool-picker-list" id="tool-picker-list">
+                  <!-- Injected via JavaScript -->
+                </div>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">JSON Schema</h4>
+                <pre class="schema-code-box" id="tool-schema-json">{}</pre>
+              </div>
+
+              <!-- Right: Interactive Parameter Tester -->
+              <div class="playground-card">
+                <h3>Live Execution Sandbox</h3>
+                <form id="playground-exec-form">
+                  <div id="playground-params-fields">
+                    <!-- Dynamic input fields -->
+                  </div>
+                  <button type="submit" class="btn btn-primary" id="btn-run-tool">
+                    <i data-lucide="play"></i> Execute Tool
+                  </button>
+                </form>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Execution Output</h4>
+                <div class="exec-output-box" id="playground-exec-output">
+                  <span class="text-dim">Select a tool and click "Execute Tool" to see raw output...</span>
+                </div>
+                <div class="exec-duration-badge" id="playground-exec-duration">Duration: 0.00ms</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Settings Modal -->
+  <div class="modal-backdrop" id="settings-modal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i data-lucide="sliders" class="accent-icon"></i>
+          <h2>Agent Settings & Providers</h2>
+        </div>
+        <button class="icon-btn modal-close-btn" id="btn-close-settings">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Provider Selection -->
+        <div class="form-group">
+          <label for="settings-provider">Active LLM Provider</label>
+          <select id="settings-provider" class="form-control">
+            <option value="gemini">Google Gemini (Recommended)</option>
+            <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+            <option value="mock">Offline Heuristic Mock Engine</option>
+          </select>
+        </div>
+
+        <!-- Gemini Config Group -->
+        <div class="provider-config-group" id="group-gemini">
+          <div class="form-group">
+            <label for="settings-gemini-key">Gemini API Key</label>
+            <div class="password-input-wrap">
+              <input type="password" id="settings-gemini-key" class="form-control" placeholder="AIzaSy...">
+              <button type="button" class="toggle-pwd-btn"><i data-lucide="eye"></i></button>
+            </div>
+            <small class="form-hint">Get an API key at <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a></small>
+          </div>
+          <div class="form-group">
+            <label for="settings-gemini-model">Gemini Model</label>
+            <select id="settings-gemini-model" class="form-control">
+              <option value="gemini-3.7-flash" selected>gemini-3.7-flash (High Performance)</option>
+              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- OpenAI Config Group -->
+        <div class="provider-config-group" id="group-openai" style="display: none;">
+          <div class="form-group">
+            <label for="settings-openai-key">OpenAI API Key</label>
+            <div class="password-input-wrap">
+              <input type="password" id="settings-openai-key" class="form-control" placeholder="sk-proj-...">
+              <button type="button" class="toggle-pwd-btn"><i data-lucide="eye"></i></button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="settings-openai-model">OpenAI Model</label>
+            <select id="settings-openai-model" class="form-control">
+              <option value="gpt-4o-mini" selected>gpt-4o-mini</option>
+              <option value="gpt-4o">gpt-4o</option>
+              <option value="gpt-4-turbo">gpt-4-turbo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="settings-openai-base">Custom Base URL (Optional - for Ollama / Groq / LocalAI)</label>
+            <input type="text" id="settings-openai-base" class="form-control" placeholder="https://api.openai.com/v1">
+          </div>
+        </div>
+
+        <!-- Temperature Slider -->
+        <div class="form-group">
+          <div class="label-with-val">
+            <label for="settings-temp">Sampling Temperature</label>
+            <span id="temp-val-display" class="val-badge">0.2</span>
+          </div>
+          <input type="range" id="settings-temp" min="0.0" max="1.5" step="0.05" value="0.2" class="range-slider">
+          <div class="slider-labels">
+            <span>0.0 (Precise & Deterministic)</span>
+            <span>1.0 (Creative)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-cancel-settings">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-settings">
+          <i data-lucide="check"></i> Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>
